@@ -48,11 +48,14 @@ function StockOut() {
 
   const handleEdit = (record) => {
     setEditing(record);
+    const dateString = typeof record.stockOutDate === 'string' 
+      ? record.stockOutDate.split('T')[0] 
+      : record.stockOutDate;
     setForm({
       sparePartId: record.sparePartId,
       stockOutQuantity: record.stockOutQuantity,
       stockOutUnitPrice: record.stockOutUnitPrice,
-      stockOutDate: record.stockOutDate,
+      stockOutDate: dateString,
     });
   };
 
@@ -79,8 +82,9 @@ function StockOut() {
             <label className="block text-sm font-medium mb-1">Quantity</label>
             <input
               type="number"
+              min="1"
               value={form.stockOutQuantity}
-              onChange={(e) => setForm({ ...form, stockOutQuantity: Number(e.target.value) })}
+              onChange={(e) => setForm({ ...form, stockOutQuantity: Math.max(0, Number(e.target.value)) })}
               required
             />
           </div>
@@ -89,8 +93,9 @@ function StockOut() {
             <input
               type="number"
               step="0.01"
+              min="0.01"
               value={form.stockOutUnitPrice}
-              onChange={(e) => setForm({ ...form, stockOutUnitPrice: Number(e.target.value) })}
+              onChange={(e) => setForm({ ...form, stockOutUnitPrice: Math.max(0, Number(e.target.value)) })}
               required
             />
           </div>

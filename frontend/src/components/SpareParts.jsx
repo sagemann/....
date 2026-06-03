@@ -4,6 +4,7 @@ import axios from 'axios';
 function SpareParts() {
   const [parts, setParts] = useState([]);
   const [form, setForm] = useState({ name: '', category: '', quantity: 0, unitPrice: 0 });
+  const [editing, setEditing] = useState(null);
   const [message, setMessage] = useState('');
 
   const loadParts = async () => {
@@ -15,17 +16,38 @@ function SpareParts() {
     loadParts();
   }, []);
 
+  const resetForm = () => {
+    setForm({ name: '', category: '', quantity: 0, unitPrice: 0 });
+    setEditing(null);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    await axios.post('/api/spare-parts', form);
-    setForm({ name: '', category: '', quantity: 0, unitPrice: 0 });
-    setMessage('Spare part added successfully');
+    if (editing) {
+      await axios.put(`/api/spare-parts/${editing.id}`, form);
+      setMessage('Spare part updated successfully');
+    } else {
+      await axios.post('/api/spare-parts', form);
+      setMessage('Spare part added successfully');
+    }
+    resetForm();
     loadParts();
   };
 
   const handleDelete = async (id) => {
     await axios.delete(`/api/spare-parts/${id}`);
+    if (editing?.id === id) resetForm();
     loadParts();
+  };
+
+  const handleEdit = (part) => {
+    setEditing(part);
+    setForm({
+      name: part.name,
+      category: part.category,
+      quantity: part.quantity,
+      unitPrice: part.unitPrice,
+    });
   };
 
   return (
@@ -44,16 +66,21 @@ function SpareParts() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Quantity</label>
-            <input type="number" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Number(e.target.value) })} required />
+            <input type="number" min="1" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: Math.max(0, Number(e.target.value)) })} required />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Unit Price</label>
-            <input type="number" step="0.01" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: Number(e.target.value) })} required />
+            <input type="number" step="0.01" min="0.01" value={form.unitPrice} onChange={(e) => setForm({ ...form, unitPrice: Math.max(0, Number(e.target.value)) })} required />
           </div>
-          <div className="sm:col-span-2">
+          <div className="sm:col-span-2 flex gap-3">
             <button type="submit" className="bg-slate-800 text-white px-4 py-2 rounded-md hover:bg-slate-900">
-              Save Spare Part
+              {editing ? 'Update Spare Part' : 'Save Spare Part'}
             </button>
+            {editing && (
+              <button type="button" onClick={resetForm} className="px-4 py-2 border border-slate-300 rounded-md">
+                Cancel
+              </button>
+            )}
           </div>
         </form>
       </section>
@@ -81,7 +108,10 @@ function SpareParts() {
                   <td className="px-4 py-3">{part.quantity}</td>
                   <td className="px-4 py-3">{part.unitPrice}</td>
                   <td className="px-4 py-3">{part.totalPrice}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-2">
+                    <button onClick={() => handleEdit(part)} className="text-slate-700 hover:text-slate-900">
+                      Edit
+                    </button>
                     <button onClick={() => handleDelete(part.id)} className="text-red-600 hover:text-red-800">
                       Delete
                     </button>
